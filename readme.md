@@ -26,7 +26,8 @@ A fully interactive 3D Chess Game built using **Three.js** and **GSAP**, featuri
 git clone https://github.com/mrabhin03/3D-Chess-Game.git
 ```
 
-2. Open `index.html` in a browser (no server required, but a local server is recommended for full functionality).
+2. Open the project folder in VS Code and install the recommended **Live Server** extension if prompted.
+3. Open `index.html` and click **Go Live** in the status bar. The game will open at `http://127.0.0.1:5500`.
 
 ## Usage
 
