@@ -35,6 +35,10 @@ function saveOriginalTransform(obj) {
     obj.userData.MainRotation = obj.rotation.clone();
     obj.userData.MainPosition = obj.position.clone();
   }
+function getSquarePositionInParent(square, parent) {
+  const worldPosition = square.getWorldPosition(new THREE.Vector3());
+  return parent.worldToLocal(worldPosition);
+}
 function initializeScene() {
   const container = document.getElementById("container");
   scene = new THREE.Scene();
@@ -367,8 +371,9 @@ function highlightMove(){
         Squares[ele.to].material.color.set(0xca1313);
       }
       
+      const squarePosition = getSquarePositionInParent(Squares[ele.to], piece.parent);
       gsap.to(piece.position, {
-        y: piece.userData.MainPosition.y+0.01,
+        y: squarePosition.y+0.01,
         duration: .3,
         ease: "power4",
       });
@@ -389,8 +394,9 @@ function RemovehighlightMove(){
     }
     const piece = ChessPieces.find(p => p.userData.NowAt == ele.to); 
     if (piece) {
+      const squarePosition = getSquarePositionInParent(Squares[ele.to], piece.parent);
       gsap.to(piece.position, {
-        y: piece.userData.MainPosition.y,
+        y: squarePosition.y,
         duration: .3,
         ease: "power4",
       });
@@ -461,6 +467,7 @@ function MoveAnimation(PieceToMove,fromSquare,ToSquare,delay,jump){
 
     fromSquare.getWorldPosition(fromWorld);
     ToSquare.getWorldPosition(toWorld);
+    const targetPosition = getSquarePositionInParent(ToSquare, PieceToMove.parent);
 
     let distance = fromWorld.distanceTo(toWorld);
     const baseSpeed = 4;
@@ -475,15 +482,15 @@ function MoveAnimation(PieceToMove,fromSquare,ToSquare,delay,jump){
     if(jump){
 
       gsap.to(PieceToMove.position, {
-        x: ToSquare.userData.MainPosition.x,
-        z: ToSquare.userData.MainPosition.z,
+        x: targetPosition.x,
+        z: targetPosition.z,
         duration: duration,
         delay: delay,
         ease: "power2.inOut"
       });
 
       gsap.to(PieceToMove.position, {
-        y: ToSquare.userData.MainPosition.y + 0.06,
+        y: targetPosition.y + 0.06,
         duration: duration/2,
         delay: delay+.1,
         yoyo: true,
@@ -497,14 +504,14 @@ function MoveAnimation(PieceToMove,fromSquare,ToSquare,delay,jump){
       
 
       gsap.to(PieceToMove.position, {
-          x: ToSquare.userData.MainPosition.x,
-          z: ToSquare.userData.MainPosition.z,
+          x: targetPosition.x,
+          z: targetPosition.z,
           duration: duration,
           delay:delay,
           ease: "power4",
       });
       gsap.to(PieceToMove.position, {
-        y: ToSquare.userData.MainPosition.y + 0.02,
+        y: targetPosition.y + 0.02,
         duration: duration/3.5,
         yoyo: true,
         repeat: 1,
@@ -569,7 +576,7 @@ function MoveTo(from,To,promoPiece){
       const result = Object.keys(DiffPieces).find(key => key.startsWith((thecolor+"_"+newPiece)));
       if(result){
         const queenClone = duplicatePiece(DiffPieces[result]);
-        queenClone.position.copy(ToSquare.userData.MainPosition);
+        queenClone.position.copy(getSquarePositionInParent(ToSquare, queenClone.parent));
         ChessPieces.push(queenClone);
         targetObjects.push(queenClone);
         queenClone.userData.NowAt=To
@@ -1036,6 +1043,14 @@ const PIECE_MODEL_PATHS = {
     king: "./assets/steel safe 3d model.glb",
   },
 };
+const PIECE_HEIGHT_RATIOS = {
+  king: 0.82,
+  queen: 0.78,
+  bishop: 0.74,
+  knight: 0.70,
+  rook: 0.66,
+  pawn: 0.62,
+};
 
 function getPieceRole(name) {
   const normalizedName = name.toLowerCase();
@@ -1065,7 +1080,6 @@ async function addSupermarketChessPieces(loader, parent, descriptors) {
   const squareSize = squareBounds.getSize(new THREE.Vector3());
   const cellWidth = Math.min(squareSize.x, squareSize.z) || 0.5;
   const footprintLimit = cellWidth * 0.78;
-  const targetHeight = 0.85;
 
   descriptors.forEach(({ name, pieceName, color, role, square }) => {
     const source = sourceModels.get(PIECE_MODEL_PATHS[color][role]);
@@ -1080,6 +1094,7 @@ async function addSupermarketChessPieces(loader, parent, descriptors) {
       throw new Error(`O modelo de ${color} ${role} tem dimensões inválidas.`);
     }
 
+    const targetHeight = cellWidth * PIECE_HEIGHT_RATIOS[role];
     const scale = Math.min(targetHeight / size.y, footprintLimit / footprint);
     visual.scale.setScalar(scale);
     visual.position.set(
@@ -1119,9 +1134,7 @@ async function addSupermarketChessPieces(loader, parent, descriptors) {
     );
     piece.geometry.translate(0, pieceHeight / 2, 0);
     piece.name = name;
-    piece.position.copy(parent.worldToLocal(
-      Squares[square].getWorldPosition(new THREE.Vector3()),
-    ));
+    piece.position.copy(getSquarePositionInParent(Squares[square], parent));
     piece.userData.NowAt = square;
     piece.userData.color = color;
     piece.userData.Name = pieceName;
