@@ -1018,6 +1018,152 @@ function cleanMaterial(material) {
 function initializeChess(){
   game = new Chess();
 }
+const PIECE_MODEL_PATHS = {
+  White: {
+    pawn: "assets/plastic water bottle 3d model.glb",
+    knight: "assets/pallet jack 3d model.glb",
+    bishop: "assets/glass bottle 3d model.glb",
+    rook: "assets/cardboard box 3d model.glb",
+    queen: "assets/office desk 3d model.glb",
+    king: "assets/steel safe 3d model.glb",
+  },
+  Black: {
+    pawn: "assets/cola bottle 3d model.glb",
+    knight: "assets/pallet jack 3d model.glb",
+    bishop: "assets/glass bottle 3d model.glb",
+    rook: "assets/cardboard box 3d model.glb",
+    queen: "assets/office desk 3d model.glb",
+    king: "assets/steel safe 3d model.glb",
+  },
+};
+
+function getPieceRole(name) {
+  const normalizedName = name.toLowerCase();
+  if (normalizedName.includes("pawn") || normalizedName === "p") return "pawn";
+  if (normalizedName.includes("knight") || normalizedName === "kn" || normalizedName === "n") return "knight";
+  if (normalizedName.includes("bishop") || normalizedName === "b") return "bishop";
+  if (normalizedName.includes("rook") || normalizedName === "r") return "rook";
+  if (normalizedName.includes("queen") || normalizedName === "q") return "queen";
+  if (normalizedName.includes("king") || normalizedName === "k") return "king";
+  throw new Error(`Tipo de peça de xadrez não reconhecido: ${name}`);
+}
+
+function loadGLTFScene(loader, path) {
+  return new Promise((resolve, reject) => {
+    loader.load(path, (gltf) => resolve(gltf.scene), undefined, reject);
+  });
+}
+
+async function addSupermarketChessPieces(loader, parent, descriptors) {
+  const modelPaths = [...new Set(Object.values(PIECE_MODEL_PATHS).flatMap(Object.values))];
+  const loadedModels = await Promise.all(
+    modelPaths.map(async (path) => [path, await loadGLTFScene(loader, path)])
+  );
+  const sourceModels = new Map(loadedModels);
+  const firstSquare = Object.values(Squares)[0];
+  const squareBounds = new THREE.Box3().setFromObject(firstSquare);
+  const squareSize = squareBounds.getSize(new THREE.Vector3());
+  const cellWidth = Math.min(squareSize.x, squareSize.z) || 0.5;
+  const footprintLimit = cellWidth * 0.78;
+
+  descriptors.forEach(({ name, pieceName, color, role, square, position }) => {
+    const source = sourceModels.get(PIECE_MODEL_PATHS[color][role]);
+    if (!source) throw new Error(`Modelo GLB não carregado para ${color} ${role}.`);
+
+    const visual = source.clone(true);
+    visual.updateMatrixWorld(true);
+    const bounds = new THREE.Box3().setFromObject(visual);
+    const size = bounds.getSize(new THREE.Vector3());
+    const footprint = Math.max(size.x, size.z);
+    if (size.y <= 0 || footprint <= 0) {
+      throw new Error(`O modelo de ${color} ${role} tem dimensões inválidas.`);
+    }
+
+    const scale = Math.min(0.84 / size.y, footprintLimit / footprint);
+    visual.scale.setScalar(scale);
+    visual.position.set(
+      -bounds.getCenter(new THREE.Vector3()).x * scale,
+      -bounds.min.y * scale,
+      -bounds.getCenter(new THREE.Vector3()).z * scale,
+    );
+
+    visual.traverse((part) => {
+      if (!part.isMesh) return;
+      const materials = Array.isArray(part.material) ? part.material : [part.material];
+      part.material = materials.map((material) => {
+        const pieceMaterial = material.clone();
+        if (color === "Black" && pieceMaterial.color) {
+          pieceMaterial.color.multiplyScalar(0.72);
+        }
+        return pieceMaterial;
+      });
+      part.castShadow = true;
+      part.receiveShadow = true;
+    });
+
+    const pickMaterial = new THREE.MeshStandardMaterial({
+      color: color === "White" ? 0xffffff : 0x282b30,
+      transparent: true,
+      opacity: 0,
+      colorWrite: false,
+      depthWrite: false,
+    });
+    const piece = new THREE.Mesh(
+      new THREE.BoxGeometry(footprintLimit * 1.15, 0.9, footprintLimit * 1.15),
+      pickMaterial,
+    );
+    piece.geometry.translate(0, 0.45, 0);
+    piece.name = name;
+    piece.position.copy(position);
+    piece.userData.NowAt = square;
+    piece.userData.color = color;
+    piece.userData.Name = pieceName;
+    piece.userData.originalColor = pickMaterial.color.clone();
+    piece.add(visual);
+
+    const shadowMaterial = new THREE.ShaderMaterial({
+      transparent: true,
+      uniforms: {
+        uOpacity: { value: 1 },
+        uColor: { value: new THREE.Color(0x000000) },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        varying vec2 vUv;
+        uniform float uOpacity;
+        uniform vec3 uColor;
+        void main() {
+          float dist = distance(vUv, vec2(0.5));
+          float alpha = smoothstep(0.5, 0.0, dist);
+          gl_FragColor = vec4(uColor, alpha * uOpacity);
+        }
+      `,
+    });
+    const shadowPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.047, 0.047),
+      shadowMaterial,
+    );
+    shadowPlane.rotation.x = -Math.PI / 2;
+    shadowPlane.position.y = 0.001;
+    shadowPlane.name = "shadowPlane";
+    piece.add(shadowPlane);
+
+    parent.add(piece);
+    saveOriginalTransform(piece);
+    ChessPieces.push(piece);
+    targetObjects.push(piece);
+
+    const pieceKey = `${color}_${piece.userData.Name}`;
+    if (!DiffPieces[pieceKey]) DiffPieces[pieceKey] = piece;
+  });
+}
+
 function removeLegacyTableObjects(model) {
   const legacyObjects = [];
   const legacyName = /chronometer|^(?:others\s*)?(?:white\s*)?cube(?:\b|$)/i;
@@ -1069,6 +1215,15 @@ function load3D() {
     .setTranscoderPath("jsm/libs/basis/")
     .detectSupport(renderer);
 
+  const pieceDescriptors = [];
+  let pieceModelsLoaded = false;
+  function startRenderingIfReady() {
+    if (pieceModelsLoaded && texturesLoaded === texturesToLoad) {
+      renderer.compile(scene, camera);
+      renderer.setAnimationLoop(animate);
+    }
+  }
+
     loader.load(
       "assets/ChessGLB.glb",
       (gltf) => {
@@ -1076,6 +1231,7 @@ function load3D() {
         model.position.set(0, -1, 0);
         removeLegacyTableObjects(model);
         scene.add(model);
+        model.updateMatrixWorld(true);
         model.traverse((child) => {
           if (!child.isMesh) return;
           for (const key of Object.keys(textureKey)) {
@@ -1155,8 +1311,7 @@ function load3D() {
 
                 texturesLoaded++;
                 if (texturesLoaded === texturesToLoad) {
-                  renderer.compile(scene, camera);
-                  renderer.setAnimationLoop(animate);
+                  startRenderingIfReady();
                 }
               });
               break;
@@ -1175,52 +1330,27 @@ function load3D() {
             child.material.color.set(0x000000);
           }else 
           if(child.name.includes('Piece')){
-            
-            saveOriginalTransform(child);
-            ChessPieces.push(child)
-            targetObjects.push(child)
-            let testvar=child.name.split("_")
-            child.userData.NowAt=testvar[testvar.length-1];
-            child.userData.color=testvar[0].split("-")[0];
-            child.userData.Name=testvar[1]
-            if(!(DiffPieces[testvar[0].split("-")[0]+"_"+testvar[1]])){
-              DiffPieces[testvar[0].split("-")[0]+"_"+testvar[1]]=child;
+            const parts = child.name.split(/[\s_]+/);
+            const color = parts[0].split("-")[0];
+            const pieceName = parts[1];
+            const square = parts[parts.length - 1];
+            if (!/^[a-h][1-8]$/i.test(square)) {
+              throw new Error(`Casa inicial inválida para a peça ${child.name}.`);
             }
-            child.userData.originalColor = child.material.color.clone();
-            const shadowMaterial = new THREE.ShaderMaterial({
-              transparent: true,
-              uniforms: {
-                uOpacity: { value: 1 },
-                uColor: { value: new THREE.Color(0x000000) }
-              },
-              vertexShader: `
-                varying vec2 vUv;
-                void main() {
-                  vUv = uv;
-                  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                }
-              `,
-              fragmentShader: `
-                varying vec2 vUv;
-                uniform float uOpacity;
-                uniform vec3 uColor;
-                void main() {
-                  float dist = distance(vUv, vec2(0.5));
-                  float alpha = smoothstep(0.5, 0.0, dist); // feather
-                  gl_FragColor = vec4(uColor, alpha * uOpacity);
-                }
-              `
+            const position = child.getWorldPosition(new THREE.Vector3());
+            model.worldToLocal(position);
+            pieceDescriptors.push({
+              legacy: child,
+              name: `${color}-Piece_${pieceName}_${square}`,
+              pieceName,
+              color,
+              role: getPieceRole(pieceName),
+              square,
+              position,
             });
-
-            const shadowPlane = new THREE.Mesh(
-              new THREE.PlaneGeometry(.047, .047),
-              shadowMaterial
-            );
-            shadowPlane.rotation.x = -Math.PI / 2;
-            shadowPlane.position.y = 0.001;
-            shadowPlane.name = "shadowPlane";
-
-            child.add(shadowPlane);
+            child.visible = false;
+            const targetIndex = targetObjects.indexOf(child);
+            if (targetIndex !== -1) targetObjects.splice(targetIndex, 1);
 
           }else if(child.name.includes("Square")){
             let key=child.name.split("_")[1];
@@ -1244,13 +1374,30 @@ function load3D() {
           
         });
         buildSupermarket(model);
+        addSupermarketChessPieces(loader, model, pieceDescriptors).then(() => {
+          pieceModelsLoaded = true;
+          startRenderingIfReady();
+        }).catch((error) => {
+          console.error("Failed to load supermarket chess piece models:", error);
+          pieceDescriptors.forEach(({ legacy, name, pieceName, color, square }) => {
+            legacy.visible = true;
+            legacy.userData.NowAt = square;
+            legacy.userData.color = color;
+            legacy.name = name;
+            legacy.userData.Name = pieceName;
+            legacy.userData.originalColor = legacy.material.color.clone();
+            saveOriginalTransform(legacy);
+            ChessPieces.push(legacy);
+            targetObjects.push(legacy);
+            const pieceKey = `${color}_${legacy.userData.Name}`;
+            if (!DiffPieces[pieceKey]) DiffPieces[pieceKey] = legacy;
+          });
+          pieceModelsLoaded = true;
+          startRenderingIfReady();
+        });
         // setTimeout(makeBotMove, 1000);
         setTimeout(()=>{TurnDisplay(0)}, 1000);
-        if (texturesToLoad === 0) {
-          renderer.compile(scene, camera);
-          renderer.setAnimationLoop(animate);
-          
-        }
+        startRenderingIfReady();
       },
       undefined,
       console.error
