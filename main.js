@@ -118,9 +118,7 @@ function initializeLoaders() {
   };
 
   links = {
-    Github: "https://github.com/mrabhin03",
-    Insta: "https://www.instagram.com/mr_abhin._",
-    Linkedin: "https://www.linkedin.com/in/mr-abhin",
+    SENAC: "https://www.pe.senac.br/",
   };
 }
 
@@ -1477,7 +1475,7 @@ function load3D() {
         if (currentIntersects.length > 0) {
           const selected = currentIntersects[0].object;
           if (
-            ["Linkedin", "Insta",  "Github","Others"].some(
+            ["SENAC", "Others"].some(
               (k) => selected.name.includes(k)
             )
           ) {
@@ -1487,7 +1485,7 @@ function load3D() {
               HoveredObject = selected;
             }
           }
-          document.body.style.cursor = (selected.name.includes("Github")||selected.name.includes("Insta")||  selected.name.includes("Linkedin")||  selected.name.includes("Piece"))
+          document.body.style.cursor = (selected.name.includes("SENAC")||selected.name.includes("Piece"))
             ? "pointer"
             : "default";
         } else {
@@ -1510,7 +1508,7 @@ function buildSupermarket(model){
         SOCIAL=/Github|Insta|Linkedin/,
         HIDE=/Floor|Chair|Leg|SideItems|Flower|vaze|Wall/i,
         SKIP=/Piece|Square|Turn|Storage|ChessBack|Outer_Frame|shadow|Github|Insta|Linkedin/;
-  const V=(x,y,z)=>new THREE.Vector3(x,y,z),NQ=()=>new THREE.Quaternion();
+  const V=(x,y,z)=>new THREE.Vector3(x,y,z);
   // model.traverse(o=>o.isMesh&&console.log(o.name)); // descomente p/ ver os nomes dos meshes
   model.updateMatrixWorld(true);
 
@@ -1537,10 +1535,14 @@ function buildSupermarket(model){
 
   // ---------- 2) gira tabuleiro + peças 90°: gira o modelo inteiro em torno do centro do tabuleiro
   //            (as posições locais que a lógica do xadrez usa continuam as mesmas) ----------
-  const soc=["Github","Insta","Linkedin"].map(k=>{
-    const ps=[],bx=new THREE.Box3();
-    model.traverse(o=>{if(o.isMesh&&o.name.includes(k)){ps.push({o,p:o.getWorldPosition(V(0,0,0)),r:o.getWorldQuaternion(NQ())});bx.expandByObject(o);}});
-    return{ps,ctr:bx.getCenter(V(0,0,0))};});
+  model.traverse(o=>{
+    if(!o.isMesh||!SOCIAL.test(o.name))return;
+    o.visible=false;
+    const targetIndex=targetObjects.indexOf(o);
+    if(targetIndex!==-1)targetObjects.splice(targetIndex,1);
+    const socialIndex=Socials.indexOf(o);
+    if(socialIndex!==-1)Socials.splice(socialIndex,1);
+  });
   const off=V(model.position.x-c.x,0,model.position.z-c.z).applyAxisAngle(V(0,1,0),TH);
   model.position.set(c.x+off.x,model.position.y,c.z+off.z);model.rotation.y+=TH;model.updateMatrixWorld(true);
 
@@ -1554,11 +1556,8 @@ function buildSupermarket(model){
     if(/Storage|Turn/.test(o.name))items.expandByObject(o);
   });
 
-  // ---------- 4) layout: esteira, PDV, tabuleiro e ícones ----------
+  // ---------- 4) layout: esteira, PDV, tabuleiro e placa SENAC ----------
   const pdvZ=c.z+bw/2+.33,pz=c.z-bw/2-.16,pdvWidth=.42,pdvDepth=.34;
-  soc.forEach(({ps,ctr},i)=>ps.forEach(({o,p,r})=>{      // ícones sociais: fileira reta na frente do tabuleiro, com a orientação original
-    const w=V(c.x+(1-i)*.13+p.x-ctr.x,p.y,pz+p.z-ctr.z);o.parent.worldToLocal(w);o.position.copy(w);
-    o.quaternion.copy(o.parent.getWorldQuaternion(NQ()).invert().multiply(r));}));
   const fp=sq.clone().union(items)
     .union(new THREE.Box3(V(c.x-.2,topY,pz-.05),V(c.x+.2,topY,pz+.05)))
     .union(new THREE.Box3(V(c.x-pdvWidth/2,topY,pdvZ-pdvDepth/2),V(c.x+pdvWidth/2,topY,pdvZ+pdvDepth/2)));
@@ -1732,6 +1731,43 @@ CREME,1,.10,.18,.07,4`;
     m.scale.set(P.w*s,P.h*s,P.d*s);m.position.set(-bl/2+.12+i*(bl-.24)/5,H+.012,bz+(Math.random()-.5)*bd*.4);
     m.rotation.y=Math.random()*3;g.add(m);});
   blob(g.position.x,g.position.z,L*1.3,Dp*1.3);
+
+  // ---------- placa interativa SENAC PE ----------
+  const senacTexture=cvs(512,192,(k,w,h)=>{
+    k.translate(w,h);k.rotate(Math.PI);
+    k.textAlign="center";k.textBaseline="middle";
+    k.fillStyle="#f58220";
+    k.beginPath();k.moveTo(w*.18,h*.19);k.lineTo(w*.23,h*.46);
+    k.lineTo(w*.18,h*.41);k.lineTo(w*.13,h*.46);k.closePath();k.fill();
+    k.fillStyle="#ffc629";
+    k.beginPath();k.moveTo(w*.18,h*.38);k.lineTo(w*.22,h*.60);
+    k.lineTo(w*.18,h*.56);k.lineTo(w*.14,h*.60);k.closePath();k.fill();
+    k.fillStyle="#07589d";
+    k.font="bold 112px Arial";k.fillText("SENAC",w*.59,h*.51);
+  });
+  const senacGroup=new THREE.Group();
+  senacGroup.position.set(c.x,topY+.002,pz-.02);
+  scene.add(senacGroup);
+  const senacFace=new THREE.Mesh(
+    new THREE.PlaneGeometry(.31,.1),
+    new THREE.MeshBasicMaterial({
+      map:senacTexture,
+      transparent:true,
+      side:THREE.DoubleSide,
+    }),
+  );
+  senacFace.rotation.x=-PI/2;
+  senacFace.position.y=.002;
+  senacFace.name="SENAC";
+  senacGroup.add(senacFace);
+  const senacHitArea=new THREE.Mesh(
+    new THREE.BoxGeometry(.34,.02,.12),
+    new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}),
+  );
+  senacHitArea.position.y=.01;
+  senacHitArea.name="SENAC";
+  senacGroup.add(senacHitArea);
+  targetObjects.push(senacHitArea);
 
   // ---------- monitor PDV = visor de peças comidas (marca amarela, mais ao fundo, inclinado p/ cima) ----------
   const pdv=new THREE.Group();pdv.position.set(c.x,topY,pdvZ);pdv.scale.setScalar(ks*1.2);scene.add(pdv);
