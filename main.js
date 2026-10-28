@@ -1020,20 +1020,20 @@ function initializeChess(){
 }
 const PIECE_MODEL_PATHS = {
   White: {
-    pawn: "assets/plastic water bottle 3d model.glb",
-    knight: "assets/pallet jack 3d model.glb",
-    bishop: "assets/glass bottle 3d model.glb",
-    rook: "assets/cardboard box 3d model.glb",
-    queen: "assets/office desk 3d model.glb",
-    king: "assets/steel safe 3d model.glb",
+    pawn: "./assets/plastic water bottle 3d model.glb",
+    knight: "./assets/pallet jack 3d model.glb",
+    bishop: "./assets/glass.glb",
+    rook: "./assets/cardboard box 3d model.glb",
+    queen: "./assets/office desk 3d model.glb",
+    king: "./assets/steel safe 3d model.glb",
   },
   Black: {
-    pawn: "assets/cola bottle 3d model.glb",
-    knight: "assets/pallet jack 3d model.glb",
-    bishop: "assets/glass bottle 3d model.glb",
-    rook: "assets/cardboard box 3d model.glb",
-    queen: "assets/office desk 3d model.glb",
-    king: "assets/steel safe 3d model.glb",
+    pawn: "./assets/cola bottle 3d model.glb",
+    knight: "./assets/pallet jack 3d model.glb",
+    bishop: "./assets/olive.glb",
+    rook: "./assets/cardboard box 3d model.glb",
+    queen: "./assets/office desk 3d model.glb",
+    king: "./assets/steel safe 3d model.glb",
   },
 };
 
@@ -1065,8 +1065,9 @@ async function addSupermarketChessPieces(loader, parent, descriptors) {
   const squareSize = squareBounds.getSize(new THREE.Vector3());
   const cellWidth = Math.min(squareSize.x, squareSize.z) || 0.5;
   const footprintLimit = cellWidth * 0.78;
+  const targetHeight = 0.85;
 
-  descriptors.forEach(({ name, pieceName, color, role, square, position }) => {
+  descriptors.forEach(({ name, pieceName, color, role, square }) => {
     const source = sourceModels.get(PIECE_MODEL_PATHS[color][role]);
     if (!source) throw new Error(`Modelo GLB não carregado para ${color} ${role}.`);
 
@@ -1079,7 +1080,7 @@ async function addSupermarketChessPieces(loader, parent, descriptors) {
       throw new Error(`O modelo de ${color} ${role} tem dimensões inválidas.`);
     }
 
-    const scale = Math.min(0.84 / size.y, footprintLimit / footprint);
+    const scale = Math.min(targetHeight / size.y, footprintLimit / footprint);
     visual.scale.setScalar(scale);
     visual.position.set(
       -bounds.getCenter(new THREE.Vector3()).x * scale,
@@ -1089,16 +1090,19 @@ async function addSupermarketChessPieces(loader, parent, descriptors) {
 
     visual.traverse((part) => {
       if (!part.isMesh) return;
-      const materials = Array.isArray(part.material) ? part.material : [part.material];
-      part.material = materials.map((material) => {
+      const cloneMaterial = (material) => {
         const pieceMaterial = material.clone();
         if (color === "Black" && pieceMaterial.color) {
           pieceMaterial.color.multiplyScalar(0.72);
         }
         return pieceMaterial;
-      });
+      };
+      part.material = Array.isArray(part.material)
+        ? part.material.map(cloneMaterial)
+        : cloneMaterial(part.material);
       part.castShadow = true;
       part.receiveShadow = true;
+      part.raycast = () => {};
     });
 
     const pickMaterial = new THREE.MeshStandardMaterial({
@@ -1108,13 +1112,16 @@ async function addSupermarketChessPieces(loader, parent, descriptors) {
       colorWrite: false,
       depthWrite: false,
     });
+    const pieceHeight = Math.max(size.y * scale, cellWidth);
     const piece = new THREE.Mesh(
-      new THREE.BoxGeometry(footprintLimit * 1.15, 0.9, footprintLimit * 1.15),
+      new THREE.BoxGeometry(footprintLimit * 1.15, pieceHeight, footprintLimit * 1.15),
       pickMaterial,
     );
-    piece.geometry.translate(0, 0.45, 0);
+    piece.geometry.translate(0, pieceHeight / 2, 0);
     piece.name = name;
-    piece.position.copy(position);
+    piece.position.copy(parent.worldToLocal(
+      Squares[square].getWorldPosition(new THREE.Vector3()),
+    ));
     piece.userData.NowAt = square;
     piece.userData.color = color;
     piece.userData.Name = pieceName;
@@ -1337,8 +1344,6 @@ function load3D() {
             if (!/^[a-h][1-8]$/i.test(square)) {
               throw new Error(`Casa inicial inválida para a peça ${child.name}.`);
             }
-            const position = child.getWorldPosition(new THREE.Vector3());
-            model.worldToLocal(position);
             pieceDescriptors.push({
               legacy: child,
               name: `${color}-Piece_${pieceName}_${square}`,
@@ -1346,7 +1351,6 @@ function load3D() {
               color,
               role: getPieceRole(pieceName),
               square,
-              position,
             });
             child.visible = false;
             const targetIndex = targetObjects.indexOf(child);
