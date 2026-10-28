@@ -1051,6 +1051,7 @@ const PIECE_HEIGHT_RATIOS = {
   rook: 0.66,
   pawn: 0.62,
 };
+const PIECE_SCALE_BOOST = 1.08;
 
 function getPieceRole(name) {
   const normalizedName = name.toLowerCase();
@@ -1095,7 +1096,7 @@ async function addSupermarketChessPieces(loader, parent, descriptors) {
     }
 
     const targetHeight = cellWidth * PIECE_HEIGHT_RATIOS[role];
-    const scale = Math.min(targetHeight / size.y, footprintLimit / footprint);
+    const scale = Math.min(targetHeight / size.y, footprintLimit / footprint) * PIECE_SCALE_BOOST;
     visual.scale.setScalar(scale);
     visual.position.set(
       -bounds.getCenter(new THREE.Vector3()).x * scale,
