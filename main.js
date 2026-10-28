@@ -1506,7 +1506,7 @@ function load3D() {
 
 
 function buildSupermarket(model){
-  const W=4.2,TIER=.62,DEP=.45,NT=4,PI=Math.PI,TH=-PI/2,   // TH = giro de 90° do jogo (horário, visto de cima)
+  const W=4.2,DEP=.45,PI=Math.PI,TH=-PI/2,   // TH = giro de 90° do jogo (horário, visto de cima)
         SOCIAL=/Github|Insta|Linkedin/,
         HIDE=/Floor|Chair|Leg|SideItems|Flower|vaze|Wall/i,
         SKIP=/Piece|Square|Turn|Storage|ChessBack|Outer_Frame|shadow|Github|Insta|Linkedin/;
@@ -1586,6 +1586,64 @@ function buildSupermarket(model){
   const spray=lathe([[0,0],[.45,0],[.5,.04],[.5,.58],[.35,.66],[.22,.72],[.22,.86],[.42,.9],[.42,1],[0,1]]);
   const box=new THREE.BoxGeometry(1,1,1).translate(0,.5,0);
   const G=[box,bottle,can,jar,bottle,spray];   // 0 caixa 1 garrafa 2 lata 3 pote 4 galão 5 spray
+  const shelfCatalog=[
+    ["rice-tio","TIO JOÃO|ARROZ",0,.24,.34,.15,0xc9a65a],["rice-camil","CAMIL|ARROZ",0,.24,.34,.15,0xe3c875],
+    ["bean-black","FEIJÃO|PRETO",0,.22,.31,.14,0x343b43],["bean-brown","FEIJÃO|CARIOCA",0,.22,.31,.14,0x9b6b3d],
+    ["flour-dona","DONA BENTA|TRIGO",0,.22,.32,.14,0xd64438],["corn-sol","SOL|FUBÁ",0,.21,.3,.14,0xf2c230],
+    ["corn-yoki","YOKI|POLENTA",0,.21,.3,.14,0xe69524],["tomato-fugini","FUGINI|MOLHO",3,.13,.2,.13,0xc83235],
+    ["mayo-pot","MAIONESE|POTE",3,.14,.19,.14,0xe3ce8c],["pasta-renata","RENATA|ESPAGUETE",0,.16,.34,.08,0xe8c64a],
+    ["oil-liza","LIZA|ÓLEO",1,.13,.34,.13,0xe3bf35],["oil-soya","SOYA|ÓLEO",1,.13,.34,.13,0x4d9b4e],
+    ["olive-salsaretti","SALSARETTI|AZEITE",1,.13,.31,.13,0x6d8838],["sugar-uniao","UNIÃO|AÇÚCAR",0,.23,.31,.14,0x24529b],
+    ["sugar-guarani","GUARANÍ|AÇÚCAR",0,.23,.31,.14,0xd1ad59],["manioc-yoki","YOKI|MANDIOCA",0,.22,.3,.14,0xd3a65c],
+    ["peas-quero","QUERO|ERVILHA",2,.12,.17,.12,0x3e9b4f],["corn-quero","QUERO|MILHO",2,.12,.17,.12,0xf0c32f],
+    ["cake-fleisch","FLEISCHMANN|BOLO",0,.22,.31,.1,0xd43b36],["cocoa-nescau","NESCAU|ACHOCOLATADO",2,.13,.2,.13,0x513b30],
+    ["cocoa-toddy","TODDY|ACHOCOLATADO",2,.13,.2,.13,0xe6a224],["gelatin","GELATINA|CAIXA",0,.16,.2,.08,0xd94e70],
+    ["condensed-nestle","NESTLÉ|LEITE COND.",2,.13,.17,.13,0xc9b77f],
+    ["laundry-omo","OMO|DETERGENTE",4,.25,.37,.17,0xd73a36],["laundry-tixan","TIXAN|LÍQUIDO",4,.25,.37,.17,0x2981bd],
+    ["softener-comfort","COMFORT|AMACIANTE",4,.24,.36,.17,0x496bb5],["softener-downy","DOWNY|AMACIANTE",4,.24,.36,.17,0x804d9e],
+    ["laundry-persil","PERSIL|LÍQUIDO",4,.21,.34,.15,0x3d8d62],["laundry-ariel","ARIEL|LÍQUIDO",4,.21,.34,.15,0x2d65a5],
+    ["laundry-surf","SURF|LÍQUIDO",4,.21,.34,.15,0x3da9a0],["dish-ypê","YPÊ|LAVA-LOUÇAS",1,.12,.27,.12,0xe2ba32],
+    ["clean-veja","VEJA|MULTIUSO",5,.13,.29,.12,0xe4c22e],["clean-cif","CIF|CREMOSO",5,.13,.29,.12,0x218a58],
+    ["clean-pato","PATO|LIMPADOR",5,.13,.29,.12,0x238a73],["spray-ajax","AJAX|SPRAY",5,.13,.29,.12,0x3479bb],
+    ["spray-vin","VIN|SPRAY",5,.13,.29,.12,0x6b9b42],["spray-uau","UAU|SPRAY",5,.13,.29,.12,0x9256a5],
+    ["sponge-scotch","SCOTCH-BRITE|ESPONJA",0,.22,.1,.13,0x39a85b],["steel-bombril","BOMBRIL|PALHA DE AÇO",0,.2,.09,.13,0x858d92],
+    ["floor-pinho","PINHO SOL|CHÃO",1,.14,.34,.14,0x348b4d],["bleach-qboa","QBOA|ÁGUA SANITÁRIA",4,.2,.34,.15,0x3c9b57],
+    ["bleach-candura","CANDURA|CLORO",4,.2,.34,.15,0x55a65a],["bleach-supremo","SUPREMO|CLORO",4,.2,.34,.15,0x378d62],
+    ["bleach-clorox","CLOROX|CLORO",4,.2,.34,.15,0x4083b7],["powder-tixan","TIXAN|SABÃO EM PÓ",0,.23,.31,.14,0x368aaf],
+    ["can-cola","COCA-COLA|LATA",2,.12,.17,.12,0xc83232],["can-sprite","SPRITE|LATA",2,.12,.17,.12,0x43a64c],
+    ["can-fanta","FANTA|LATA",2,.12,.17,.12,0xe57d29],["can-redbull","RED BULL|ENERGÉTICO",2,.12,.17,.12,0x3c5a96],
+    ["can-monster","MONSTER|ENERGÉTICO",2,.12,.17,.12,0x323b35],["bottle-cola","COCA-COLA|REFRIGERANTE",1,.14,.36,.14,0xc83232],
+    ["bottle-guarana","GUARANÁ ANTARCTICA|REFRI",1,.14,.36,.14,0x32854e],["bottle-fanta","FANTA|REFRIGERANTE",1,.14,.36,.14,0xe57d29],
+    ["bottle-schweppes","SCHWEPPES|REFRIGERANTE",1,.14,.36,.14,0xc8ad62],["juice-valle","VALLË|SUCO",0,.16,.32,.1,0xe89534],
+    ["juice-tial","TIAL|NÉCTAR",0,.16,.32,.1,0x6b9c47],["juice-dafruta","DAFRUTA|SUCO",0,.16,.32,.1,0xd74c47],
+    ["bottle-powerade","POWERADE|ISOTÔNICO",1,.14,.34,.13,0x3655a2],["bottle-gatorade","GATORADE|ISOTÔNICO",1,.14,.34,.13,0xe7822f],
+    ["water-mineral","ÁGUA|MINERAL",1,.13,.35,.13,0x60a9c5],["water-sparkling","ÁGUA|COM GÁS",1,.13,.35,.13,0x488baf],
+    ["water-perrier","PERRIER|PREMIUM",1,.13,.35,.13,0x469b68],["water-sanpellegrino","S.PELLEGRINO|PREMIUM",1,.13,.35,.13,0x9d3e3b],
+    ["milk-carton","LEITE|LONGA VIDA",0,.2,.33,.12,0xe4ddc3],["milk-fresh","LEITE|FRESCO",1,.14,.33,.14,0xe5dec9],
+    ["yogurt","IOGURTE|POTE",3,.14,.17,.14,0xd36c91],["choco-milk","ACHOCOLATADO|GARRAFA",1,.13,.3,.13,0x78513a],
+    ["dessert-dairy","SOBREMESA|LÁCTEA",3,.14,.17,.14,0xd9a45d],["cheese-round","QUEIJO|PEÇA INTEIRA",3,.2,.2,.16,0xe8c75b],
+    ["cheese-slices","QUEIJO|FATIADO",0,.2,.17,.12,0xd9aa45],["cheese-vacuum","QUEIJO|A VÁCUO",0,.2,.19,.13,0xd5a94e],
+    ["butter","MANTEIGA|BLOCO",0,.18,.13,.13,0xf0d36c],["margarine","MARGARINA|POTE",3,.17,.15,.17,0xe6c64e],
+    ["requeijao","REQUEIJÃO|POTE",3,.15,.17,.15,0xf0e8ca],["pizza","PIZZA|CONGELADA",0,.24,.17,.2,0xd65243],
+    ["icecream","SORVETE|POTE",3,.17,.2,.17,0x8e6db0],["frozen-vegetables","LEGUMES|CONGELADOS",0,.2,.22,.14,0x55a45b],
+    ["lasagna","LASANHA|CONGELADA",0,.24,.17,.2,0xb84839],
+  ].map(([id,label,shape,w,h,d,color])=>{
+    const map=cvs(128,192,(k,x,y)=>{
+      const packageColor=`#${color.toString(16).padStart(6,"0")}`;
+      k.fillStyle=packageColor;k.fillRect(0,0,x,y);
+      k.fillStyle="rgba(255,255,255,.9)";k.fillRect(x*.06,y*.34,x*.88,y*.38);
+      const [brand,product]=label.split("|");
+      k.textAlign="center";k.fillStyle="#fff";k.font=`bold ${Math.min(17,Math.floor(190/brand.length))}px Arial`;
+      k.shadowColor="rgba(0,0,0,.4)";k.shadowBlur=2;
+      k.fillText(brand,x/2,y*.17);
+      k.shadowBlur=0;k.fillStyle="#20252a";k.font=`bold ${Math.min(16,Math.floor(180/product.length))}px Arial`;
+      k.fillText(product,x/2,y*.56);
+      k.fillStyle=packageColor;k.fillRect(x*.24,y*.66,x*.52,y*.06);
+      k.fillStyle="rgba(255,255,255,.9)";k.fillRect(x*.35,y*.78,x*.3,y*.045);
+    });
+    return{id,w,h,d,geo:G[shape],mat:new THREE.MeshStandardMaterial({roughness:.48,map})};
+  });
+  const shelfItemById=Object.fromEntries(shelfCatalog.map(item=>[item.id,item]));
   const CAT=`COLA,1,.09,.30,.09,0
 ÁGUA,1,.08,.28,.08,0
 SUCO,1,.09,.27,.09,0
@@ -1721,49 +1779,127 @@ CREME,1,.10,.18,.07,4`;
   stool(xa-.32,c.z,PI/2);    // lado esquerdo/direito da mesa, de frente p/ o tabuleiro
   stool(xb+.32,c.z,-PI/2);
 
-  // ---------- 4 paredes de gôndolas: 4 andares, 4 fileiras de profundidade ----------
+  // ---------- 4 gôndolas: cinco prateleiras com produtos organizados ----------
   const shM=M(0xf3f5f7,.4,.2),stM=M(0x8f99a3,.4,.6),bkM=M(0xe3e7eb,.8);
   const lipT=cvs(256,32,(k,w,h)=>{k.fillStyle="#f4f5f7";k.fillRect(0,0,w,h);
     for(let i=0;i<8;i++){k.fillStyle=i%3?"#ffeb3b":"#ef5350";k.fillRect(i*32+4,6,24,20);k.fillStyle="#222";k.fillRect(i*32+8,12,16,3);k.fillRect(i*32+8,18,10,3);}});
   lipT.wrapS=THREE.RepeatWrapping;lipT.repeat.set(8,1);
   const lip=M(0xffffff,.5);lip.map=lipT;
-  const HT=.22+NT*TIER+.1,ZR=[.84,.62,.4,.18];
-  const inst=T.map(()=>[]),q=new THREE.Quaternion(),eu=new THREE.Euler(),lm=new THREE.Matrix4();
-  const wall=(len,x,z,ry,title,col,categories,refrigerated=false)=>{
-    const w=new THREE.Group(),pool=T.map((P,i)=>categories.includes(P.cat)?i:-1).filter(i=>i>=0);
+  const DISPLAY_SHELVES=[
+    [["tomato-fugini","mayo-pot","peas-quero","corn-quero","gelatin","condensed-nestle"],["cake-fleisch","cocoa-nescau","cocoa-toddy","pasta-renata"],["flour-dona","corn-sol","corn-yoki","manioc-yoki"],["bean-black","bean-brown","sugar-uniao","sugar-guarani"],["rice-tio","rice-camil","oil-liza","oil-soya","olive-salsaretti"]],
+    [["sponge-scotch","steel-bombril","spray-ajax","spray-vin","spray-uau"],["dish-ypê","clean-veja","clean-cif","clean-pato"],["powder-tixan","floor-pinho","clean-veja"],["bleach-qboa","bleach-candura","bleach-supremo","bleach-clorox"],["laundry-omo","laundry-tixan","softener-comfort","softener-downy","laundry-persil","laundry-ariel","laundry-surf"]],
+    [["can-cola","can-sprite","can-fanta","can-redbull","can-monster"],["juice-valle","juice-tial","juice-dafruta"],["can-monster","can-redbull","bottle-powerade","bottle-gatorade"],["bottle-cola","bottle-guarana","bottle-fanta","bottle-schweppes"],["water-mineral","water-sparkling","water-perrier","water-sanpellegrino"]],
+  ];
+  const COLD_SECTIONS=[
+    [["milk-carton"],["milk-carton","milk-fresh"],["milk-carton","milk-fresh"],["milk-carton","milk-fresh"],["milk-carton","milk-fresh"]],
+    [["yogurt","dessert-dairy"],["yogurt","choco-milk","dessert-dairy"],["yogurt","choco-milk"],["dessert-dairy","yogurt"],["yogurt","dessert-dairy"]],
+    [["cheese-slices","cheese-vacuum"],["cheese-round","cheese-slices"],["cheese-round","cheese-vacuum"],["cheese-slices","cheese-vacuum"],["cheese-round","cheese-vacuum"]],
+    [["butter","margarine"],["butter","margarine","requeijao"],["requeijao","butter"],["margarine","requeijao"],["butter","margarine","requeijao"]],
+    [["frozen-vegetables"],["pizza","lasagna"],["icecream","pizza"],["frozen-vegetables","lasagna","pizza"],["icecream","frozen-vegetables","lasagna"]],
+  ];
+  const SHELF_COUNT=5,SHELF_TIER=.54,HT=.22+SHELF_COUNT*SHELF_TIER+.1;
+  const inst=shelfCatalog.map(()=>[]),q=new THREE.Quaternion(),lm=new THREE.Matrix4();
+  const shelfProductIndex=new Map(shelfCatalog.map((item,index)=>[item.id,index]));
+  const wall=(len,x,z,ry,title,col,shelves,refrigeratedSections=null)=>{
+    const w=new THREE.Group();
+    const wallBackMaterial=refrigeratedSections?M(0xf2f5f6,.72):M(0x202428,.78);
+    const wallFrameMaterial=refrigeratedSections?M(0xc8d1d6,.38,.35):M(0x454b51,.72);
+    const shelfMaterial=refrigeratedSections?M(0xe5ebee,.5,.12):M(0x34393e,.78);
     w.position.set(x,floorY,z);w.rotation.y=ry;scene.add(w);w.updateMatrixWorld(true);
-    B(len,HT+.3,.04,bkM,0,(HT+.3)/2,-.02,w);B(len,.18,DEP+.06,stM,0,.09,DEP/2,w);B(len,.38,.07,M(col,.5),0,HT,.03,w);
-    for(let u=-len/2;u<=len/2+.01;u+=1.2)B(.05,HT+.1,.06,stM,u,(HT+.1)/2,.03,w);
-    const sm=new THREE.MeshBasicMaterial({map:cvs(1024,128,(k,a,b)=>{k.fillStyle="#"+col.toString(16).padStart(6,"0");k.fillRect(0,0,a,b);
-      k.fillStyle="#fff";k.font="bold 84px Arial";k.textAlign="center";k.fillText(title,a/2,98);})});
-    for(const e of[-1,1]){const sp=new THREE.Mesh(new THREE.PlaneGeometry(2.4,.3),sm);sp.position.set(e*len*.25,HT,.07);w.add(sp);}
-    if(refrigerated){
+    B(len,HT+.3,.04,wallBackMaterial,0,(HT+.3)/2,-.02,w);B(len,.18,DEP+.06,wallFrameMaterial,0,.09,DEP/2,w);B(len,.38,.07,M(col,.5),0,HT,.03,w);
+    for(let u=-len/2;u<=len/2+.01;u+=1.2)B(.05,HT+.1,.06,wallFrameMaterial,u,(HT+.1)/2,.03,w);
+    const bannerTexture=cvs(1024,160,(k,a,b)=>{
+      k.fillStyle="#"+col.toString(16).padStart(6,"0");k.fillRect(0,0,a,b);
+      k.strokeStyle="rgba(255,255,255,.9)";k.lineWidth=8;k.strokeRect(6,6,a-12,b-12);
+      k.fillStyle="#fff";k.font="bold 76px Arial";k.textAlign="center";k.textBaseline="middle";
+      k.shadowColor="rgba(0,0,0,.55)";k.shadowBlur=6;k.fillText(title,a/2,b/2);
+    });
+    const banner=new THREE.Mesh(new THREE.PlaneGeometry(Math.min(len*.72,3.8),.34),new THREE.MeshBasicMaterial({map:bannerTexture}));
+    banner.position.set(0,HT-.08,.075);w.add(banner);
+    if(refrigeratedSections){
       const glass=new THREE.MeshPhysicalMaterial({color:0xd9f5ff,roughness:.12,metalness:.05,transparent:true,opacity:.18,depthWrite:false});
-      const frame=M(0x8c9ba5,.3,.65);
-      for(let x0=-len/2+.05;x0<len/2-.05;x0+=len/4){
+      const frame=M(0xb7c2c8,.3,.35);
+      for(let section=0;section<=SHELF_COUNT;section++){
+        const x0=-len/2+section*len/SHELF_COUNT;
         B(.025,HT-.08,.035,frame,x0,(HT-.08)/2,DEP+.035,w);
-        const pane=new THREE.Mesh(new THREE.PlaneGeometry(len/4-.035,HT-.16),glass);
-        pane.position.set(x0+len/8,(HT-.08)/2,DEP+.04);w.add(pane);
+      }
+      for(let section=0;section<SHELF_COUNT;section++){
+        const pane=new THREE.Mesh(new THREE.PlaneGeometry(len/SHELF_COUNT-.035,HT-.16),glass);
+        pane.position.set(-len/2+(section+.5)*len/SHELF_COUNT,(HT-.08)/2,DEP+.04);w.add(pane);
       }
       B(len,.025,.025,M(0xb9e9f4,.3,.25),0,HT-.1,DEP+.025,w);
     }
-    for(let t=0;t<NT;t++){
-      const y=.22+t*TIER;B(len,.03,DEP,shM,0,y,DEP/2,w);B(len,.05,.014,lip,0,y+.01,DEP+.007,w);
-      for(let row=0;row<4;row++)for(let x0=-len/2+.06;x0<len/2-.12;){
-        const k=pool[Math.random()*pool.length|0],P=T[k];
-        for(let i=0,n=3+(Math.random()*6|0);i<n&&x0<len/2-.12;i++){
-          const sw=P.w*(.97+Math.random()*.06),sh=P.h*(.97+Math.random()*.08),
-                ly=Math.min(sh<.08?6:3,Math.floor((TIER-.07)/(sh*1.02)));
-          for(let l=0;l<ly;l++){   // empilha itens baixos (latas, caixinhas) p/ ficar mais cheio
-            lm.compose(V(x0+sw/2,y+.015+l*sh,DEP*ZR[row]),q.setFromEuler(eu.set(0,(Math.random()-.5)*.12,0)),V(sw,sh,P.d));
-            inst[k].push(new THREE.Matrix4().multiplyMatrices(w.matrixWorld,lm));}
-          x0+=sw*1.02;}}}
+    const placeRow=(products,from,to,y,zPosition)=>{
+      if(!products.length)return;
+      const gap=.055;
+      let x0=from,index=0;
+      while(x0<to){
+        const item=shelfItemById[products[index++%products.length]];
+        if(!item)throw new Error(`Produto de gôndola desconhecido: ${products[(index-1)%products.length]}`);
+        if(x0+item.w>to)break;
+        const itemIndex=shelfProductIndex.get(item.id);
+        lm.compose(V(x0+item.w/2,y+.015,zPosition),q,V(item.w,item.h,item.d));
+        inst[itemIndex].push(new THREE.Matrix4().multiplyMatrices(w.matrixWorld,lm));
+        x0+=item.w+gap;
+      }
+    };
+    for(let tier=0;tier<SHELF_COUNT;tier++){
+      const y=.22+tier*SHELF_TIER;
+      B(len,.03,DEP,shelfMaterial,0,y,DEP/2,w);B(len,.05,.014,lip,0,y+.01,DEP+.007,w);
+      const shelfIndex=SHELF_COUNT-1-tier;
+      if(refrigeratedSections){
+        for(let section=0;section<SHELF_COUNT;section++){
+          const sectionWidth=len/SHELF_COUNT,from=-len/2+section*sectionWidth+.07;
+          placeRow(refrigeratedSections[section][shelfIndex],from,-len/2+(section+1)*sectionWidth-.07,y,DEP*.48);
+        }
+      }else{
+        placeRow(shelves[shelfIndex],-len/2+.12,len/2-.12,y,DEP*.62);
+      }
+    }
   };
-  wall(2*W+.5,c.x,c.z+W,PI,"BEBIDAS",0xc62828,[0]);
-  wall(2*W+.5,c.x,c.z-W,0,"MERCEARIA",0xef6c00,[1,3]);
-  wall(2*W-.8,c.x+W,c.z,-PI/2,"FRIOS & LATICÍNIOS",0x1565c0,[4],true);
-  wall(2*W-.8,c.x-W,c.z,PI/2,"LIMPEZA",0x2e7d32,[2]);
-  T.forEach((P,k)=>{if(!inst[k].length)return;const im=new THREE.InstancedMesh(P.geo,P.mat,inst[k].length);
+  const cornerSetback=.5;
+  wall(2*W+.5-cornerSetback,c.x,c.z+W,PI,"BEBIDAS",0xc62828,DISPLAY_SHELVES[2]);
+  wall(2*W+.5-cornerSetback,c.x,c.z-W,0,"MERCEARIA",0xef6c00,DISPLAY_SHELVES[0]);
+  wall(2*W-.8-cornerSetback,c.x+W,c.z,-PI/2,"FRIOS & LATICÍNIOS",0x303a44,COLD_SECTIONS[0],COLD_SECTIONS);
+  wall(2*W-.8-cornerSetback,c.x-W,c.z,PI/2,"LIMPEZA",0x2e7d32,DISPLAY_SHELVES[1]);
+
+  const potHeight=.28;
+  const potGeometry=new THREE.CylinderGeometry(.14,.18,potHeight,12);
+  const potMaterial=M(0x77736a,.78);
+  const potInstances=new THREE.InstancedMesh(potGeometry,potMaterial,4);
+  const foliageGeometry=new THREE.SphereGeometry(1,8,6);
+  const foliageMaterial=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.82});
+  const foliageInstances=new THREE.InstancedMesh(foliageGeometry,foliageMaterial,20);
+  const foliageColors=[0x347a3d,0x438b45,0x286b35,0x55954a,0x347a3d];
+  const identity=new THREE.Quaternion();
+  let potIndex=0,foliageIndex=0;
+  for(const xSign of[-1,1])for(const zSign of[-1,1]){
+    const x=c.x+xSign*(W-.15),z=c.z+zSign*(W-.15);
+    lm.compose(V(x,floorY+potHeight/2,z),identity,V(1,1,1));
+    potInstances.setMatrixAt(potIndex++,lm);
+    const leaves=[
+      [0,potHeight+.06,0,.14],
+      [-.085,potHeight+.015,0,.12],
+      [.085,potHeight+.015,0,.12],
+      [0,potHeight+.015,-.085,.12],
+      [0,potHeight+.015,.085,.12],
+    ];
+    for(const [offsetX,offsetY,offsetZ,radius] of leaves){
+      lm.compose(V(x+offsetX,floorY+offsetY,z+offsetZ),identity,V(radius,radius,radius));
+      foliageInstances.setMatrixAt(foliageIndex,lm);
+      foliageInstances.setColorAt(foliageIndex,new THREE.Color(foliageColors[foliageIndex%foliageColors.length]));
+      foliageIndex++;
+    }
+  }
+  potInstances.instanceMatrix.needsUpdate=true;
+  foliageInstances.instanceMatrix.needsUpdate=true;
+  if(potInstances.instanceColor)potInstances.instanceColor.needsUpdate=true;
+  if(foliageInstances.instanceColor)foliageInstances.instanceColor.needsUpdate=true;
+  potInstances.computeBoundingSphere();
+  foliageInstances.computeBoundingSphere();
+  scene.add(potInstances,foliageInstances);
+
+  shelfCatalog.forEach((P,k)=>{if(!inst[k].length)return;const im=new THREE.InstancedMesh(P.geo,P.mat,inst[k].length);
     inst[k].forEach((m,i)=>im.setMatrixAt(i,m));im.computeBoundingSphere();scene.add(im);});
 }
 function Start3DPage() {
